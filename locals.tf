@@ -7,6 +7,7 @@ locals {
   openwebui_pvc_size = "20Gi"              # Size of Open WebUI PVC; higher size = more documents stored for RAG
   code_models        = ["codellama:code"]  # Models to pre-load for code autocompletion (FIM)
   chat_models        = ["llama3:instruct"] # Models to pre-load for chat
-  domain_name        = "0xthresh.xyz"      # your.domain.com # Route53 domain to use for the web UI hostname
+  domain_name        = "0xthresh.xyz"      # Route53 domain to use for the web UI hostname
   public_hostname    = "webui"             # Public hostname to use for UI hostname 
+  fqdn               = "${local.public_hostname}.${local.domain_name}" # FQDN of the public hostname
 }

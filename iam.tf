@@ -281,63 +281,34 @@ resource "aws_iam_role_policy_attachment" "aws_load_balancer_controller" {
   role       = aws_iam_role.aws_load_balancer_controller.name
 }
 
-# External DNS role - coming son
-# resource "aws_iam_policy" "external_dns" {
-#   name = "external-dns"
-#   policy = <<EOT
-#   {
-#   "Version": "2012-10-17",
-#   "Statement": [
-#     {
-#       "Effect": "Allow",
-#       "Action": [
-#         "route53:ChangeResourceRecordSets"
-#       ],
-#       "Resource": [
-#         "arn:aws:route53:::hostedzone/${data.aws_route53_zone.webui.zone_id}"
-#       ]
-#     },
-#     {
-#       "Effect": "Allow",
-#       "Action": [
-#         "route53:ListHostedZones",
-#         "route53:ListResourceRecordSets",
-#         "route53:ListTagsForResource"
-#       ],
-#       "Resource": [
-#         "*"
-#       ]
-#     }
-#   ]
-# }
-#   EOT
-# }
-
-# resource "aws_iam_role" "external_dns" {
-#   name = "external-dns"
-
-#   assume_role_policy = <<POLICY
-# {
-#   "Version": "2012-10-17",
-#   "Statement": [
-#     {
-#       "Effect": "Allow",
-#       "Principal": {
-#         "Federated": "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/${replace(module.ollama-eks.cluster_oidc_issuer_url, "https://", "")}"
-#       },
-#       "Action": "sts:AssumeRoleWithWebIdentity",
-#       "Condition": {
-#         "StringEquals": {
-#           "${replace(module.ollama-eks.cluster_oidc_issuer_url, "https://", "")}:sub": "system:serviceaccount:kube-system:aws-load-balancer-controller"
-#         }
-#       }
-#     }
-#   ]
-# }
-# POLICY
-# }
-
-# resource "aws_iam_role_policy_attachment" "external_dns" {
-#   policy_arn = aws_iam_policy.external_dns.arn
-#   role       = aws_iam_role.external_dns.name
-# }
+# External DNS role 
+resource "aws_iam_policy" "external_dns" {
+  name = "external-dns"
+  policy = <<EOT
+  {
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "route53:ChangeResourceRecordSets"
+      ],
+      "Resource": [
+        "arn:aws:route53:::hostedzone/${data.aws_route53_zone.webui.zone_id}"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "route53:ListHostedZones",
+        "route53:ListResourceRecordSets",
+        "route53:ListTagsForResource"
+      ],
+      "Resource": [
+        "*"
+      ]
+    }
+  ]
+}
+  EOT
+}
