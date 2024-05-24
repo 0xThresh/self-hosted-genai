@@ -1,6 +1,9 @@
 # Local .terraform directories
 **/.terraform/*
 
+# Since it's a template repo, ignore the TF lock file
+.terraform.lock.hcl
+
 # .tfstate files
 *.tfstate
 *.tfstate.*
