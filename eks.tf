@@ -113,6 +113,7 @@ module "ollama-eks" {
       iam_role_additional_policies = {
         AmazonALBIngressController   = aws_iam_policy.aws_load_balancer_controller.arn
         AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+        AWSExternalDNS               = aws_iam_policy.external_dns.arn
       }
 
       # User data bootstraps EKS node and installs AWS CLI 
@@ -148,6 +149,7 @@ module "ollama-eks" {
       iam_role_additional_policies = {
         AmazonALBIngressController   = aws_iam_policy.aws_load_balancer_controller.arn
         AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+        AWSExternalDNS               = aws_iam_policy.external_dns.arn
       }
 
       # Adds a disk large enough to store models
@@ -197,6 +199,7 @@ module "ollama-eks" {
       iam_role_additional_policies = {
         AmazonALBIngressController   = aws_iam_policy.aws_load_balancer_controller.arn
         AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+        AWSExternalDNS               = aws_iam_policy.external_dns.arn
       }
 
       # Adds a disk large enough to store models

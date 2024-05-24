@@ -35,6 +35,14 @@ resource "helm_release" "aws_load_balancer_controller" {
   }
 }
 
+# External DNS controller
+resource "helm_release" "external_dns" {
+  name       = "external-dns"
+  repository = "https://kubernetes-sigs.github.io/external-dns/"
+  chart      = "external-dns"
+  namespace  = "kube-system"
+  depends_on = [module.ollama-eks]
+}
 
 resource "helm_release" "ollama_small_fim" {
   name       = "ollama-small-fim"
@@ -141,6 +149,12 @@ resource "helm_release" "open_webui" {
   set {
     name  = "ingress.enabled"
     value = "true"
+  }
+
+  # Sets the external FQDN of the WebUI
+  set {
+    name  = "ingress.annotations.external-dns\\.alpha\\.kubernetes\\.io/hostname"
+    value = local.fqdn
   }
 
   set {

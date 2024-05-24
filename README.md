@@ -52,10 +52,12 @@ Do you want to perform these actions?
   Enter a value: 
 ```
 Type `yes` and hit Enter if you're ready to build it out. The apply usually takes 20-25 minutes. 
+You may run into an error with the Ollama Helm charts; simply run `terraform apply` again, and
+they should work on the second build attempt. 
 
-You can now access your Open WebUI deployment by navigating to the load balancer DNS name, which can
-be found in the [AWS Load Balancers](https://us-west-2.console.aws.amazon.com/ec2/home?region=us-west-2#LoadBalancers:) page in your console. (I'll soon have External DNS implemented to 
-create the DNS record automatically.)
+You can now access your Open WebUI deployment by navigating to the FQDN, which uses your chosen
+Route53 domain and your chosen record name (e.g., https://webui.0xthresh.xyz). Choose the Sign Up
+option to create your firs Open WebUI admin user, and you can start testing!
 
 # Cleaning Up
 If you aren't planning on leaving this running long-term, make sure to destroy the resources in Terraform
