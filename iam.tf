@@ -283,7 +283,7 @@ resource "aws_iam_role_policy_attachment" "aws_load_balancer_controller" {
 
 # External DNS role 
 resource "aws_iam_policy" "external_dns" {
-  name = "external-dns"
+  name   = "external-dns"
   policy = <<EOT
   {
   "Version": "2012-10-17",

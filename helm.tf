@@ -153,7 +153,7 @@ resource "helm_release" "open_webui" {
 
   # Sets the external FQDN of the WebUI
   set {
-    name = "ingress.annotations.external-dns\\.alpha\\.kubernetes\\.io/hostname"
+    name  = "ingress.annotations.external-dns\\.alpha\\.kubernetes\\.io/hostname"
     value = local.fqdn
   }
 
