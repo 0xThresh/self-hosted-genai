@@ -1,7 +1,6 @@
 # Adds the NVIDIA Device Plugin to enable GPU access on Ollama pods
 resource "helm_release" "nvidia_device_plugin" {
-  name       = "nvidia-device-plugin"
-  depends_on = [module.ollama-eks]
+  name = "nvidia-device-plugin"
 
   repository = "https://nvidia.github.io/k8s-device-plugin"
   chart      = "nvidia-device-plugin"
@@ -17,11 +16,10 @@ resource "helm_release" "aws_load_balancer_controller" {
   chart      = "aws-load-balancer-controller"
   namespace  = "kube-system"
   version    = "1.7.2"
-  depends_on = [module.ollama-eks]
 
   set {
     name  = "clusterName"
-    value = local.cluster_name
+    value = "genai-cluster"
   }
 
   set {
@@ -41,12 +39,11 @@ resource "helm_release" "external_dns" {
   repository = "https://kubernetes-sigs.github.io/external-dns/"
   chart      = "external-dns"
   namespace  = "kube-system"
-  depends_on = [module.ollama-eks]
 }
 
 resource "helm_release" "ollama_small_fim" {
   name       = "ollama-small-fim"
-  depends_on = [module.ollama-eks, helm_release.nvidia_device_plugin]
+  depends_on = [helm_release.nvidia_device_plugin]
 
   repository       = "https://otwld.github.io/ollama-helm"
   chart            = "ollama"
@@ -62,19 +59,19 @@ resource "helm_release" "ollama_small_fim" {
   # Enables Ollama to answer multiple requests concurrently
   set {
     name  = "ollama.extraEnv.OLLAMA_NUM_PARALLEL"
-    value = 10
+    value = 4
   }
 
   # Keeps models loaded in Ollama to prevent load delay
   set {
-    name  = "ollama.extraEnv.KEEP_ALIVE"
+    name  = "ollama.extraEnv.OLLAMA_KEEP_ALIVE"
     value = "-1"
   }
 }
 
 resource "helm_release" "ollama_small_chat" {
   name       = "ollama-small-chat"
-  depends_on = [module.ollama-eks, helm_release.nvidia_device_plugin]
+  depends_on = [helm_release.nvidia_device_plugin]
 
   repository       = "https://otwld.github.io/ollama-helm"
   chart            = "ollama"
@@ -90,25 +87,25 @@ resource "helm_release" "ollama_small_chat" {
   # Enables Ollama to answer multiple requests concurrently
   set {
     name  = "ollama.extraEnv.OLLAMA_NUM_PARALLEL"
-    value = 10
+    value = 4
   }
 
   # Keeps models loaded in Ollama to prevent load delay
   set {
-    name  = "ollama.extraEnv.KEEP_ALIVE"
+    name  = "ollama.extraEnv.OLLAMA_KEEP_ALIVE"
     value = "-1"
   }
 }
 
 resource "helm_release" "open_webui" {
   name       = "open-webui"
-  depends_on = [module.ollama-eks, helm_release.aws_load_balancer_controller]
+  depends_on = [helm_release.aws_load_balancer_controller]
 
   repository       = "https://helm.openwebui.com"
   chart            = "open-webui"
   namespace        = "genai"
   create_namespace = true
-  version          = "2.0.2"
+  version          = "3.4.3"
 
   # Sets the names of the Ollama services for Open WebUI to use 
   set_list {

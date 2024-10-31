@@ -1,3 +1,4 @@
+# TODO: Replace AMIs with Ubuntu Deep Learning AMIs 
 # Gets the latest AWS EKS AMI with GPU support
 data "aws_ami" "eks_gpu_ami" {
   most_recent = true
@@ -34,7 +35,7 @@ data "aws_ami" "eks_al2_ami" {
   }
 }
 
-module "ollama-eks" {
+module "genai-eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "~> 20.0"
 

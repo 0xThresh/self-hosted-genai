@@ -28,12 +28,12 @@ data "aws_iam_policy_document" "ebs_csi_driver_role" {
 
     condition {
       test     = "StringEquals"
-      variable = "${replace(module.ollama-eks.cluster_oidc_issuer_url, "https://", "")}:sub"
+      variable = "${replace(module.genai-eks.cluster_oidc_issuer_url, "https://", "")}:sub"
       values   = ["system:serviceaccount:kube-system:ebs-csi-controller-sa"]
     }
 
     principals {
-      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/${replace(module.ollama-eks.cluster_oidc_issuer_url, "https://", "")}"]
+      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/${replace(module.genai-eks.cluster_oidc_issuer_url, "https://", "")}"]
       type        = "Federated"
     }
   }
@@ -56,12 +56,12 @@ resource "aws_iam_role" "aws_load_balancer_controller" {
     {
       "Effect": "Allow",
       "Principal": {
-        "Federated": "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/${replace(module.ollama-eks.cluster_oidc_issuer_url, "https://", "")}"
+        "Federated": "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/${replace(module.genai-eks.cluster_oidc_issuer_url, "https://", "")}"
       },
       "Action": "sts:AssumeRoleWithWebIdentity",
       "Condition": {
         "StringEquals": {
-          "${replace(module.ollama-eks.cluster_oidc_issuer_url, "https://", "")}:sub": "system:serviceaccount:kube-system:aws-load-balancer-controller"
+          "${replace(module.genai-eks.cluster_oidc_issuer_url, "https://", "")}:sub": "system:serviceaccount:kube-system:aws-load-balancer-controller"
         }
       }
     }
