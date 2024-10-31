@@ -84,3 +84,4 @@ resource "null_resource" "enable_pgvector" {
       echo "Command completed at $(date)" >> pgvector_setup.log
     EOT
   }
+}
