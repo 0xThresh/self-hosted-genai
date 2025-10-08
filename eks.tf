@@ -1,21 +1,11 @@
-# Gets the latest AWS EKS AMI with GPU support
+# Gets the latest AWS EKS AMI with GPU support for AL2023
 data "aws_ami" "eks_gpu_ami" {
-  most_recent = true
-
-  filter {
-    name   = "name"
-    values = ["amazon-eks-gpu-node-${local.cluster_version}-*"]
-  }
-}
-
-# Gets the latest regular AWS EKS AMI 
-data "aws_ami" "eks_al2_ami" {
   most_recent = true
   owners      = ["amazon"]
 
   filter {
     name   = "name"
-    values = ["amazon-eks-node-${local.cluster_version}-*"]
+    values = ["amazon-eks-node-al2023-x86_64-nvidia-${local.cluster_version}-*"]
   }
 
   filter {
@@ -34,16 +24,42 @@ data "aws_ami" "eks_al2_ami" {
   }
 }
 
-module "ollama-eks" {
+# Gets the latest regular AWS EKS AMI for AL2023
+data "aws_ami" "eks_al2023_ami" {
+  most_recent = true
+  owners      = ["amazon"]
+
+  filter {
+    name   = "name"
+    values = ["amazon-eks-node-al2023-x86_64-standard-${local.cluster_version}-*"]
+  }
+
+  filter {
+    name   = "owner-alias"
+    values = ["amazon"]
+  }
+
+  filter {
+    name   = "root-device-type"
+    values = ["ebs"]
+  }
+
+  filter {
+    name   = "architecture"
+    values = ["x86_64"]
+  }
+}
+
+module "open-webui-eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "~> 20.0"
+  version = "~> 21.0"
 
-  cluster_name    = local.cluster_name
-  cluster_version = local.cluster_version
+  name               = local.cluster_name
+  kubernetes_version = local.cluster_version
 
-  cluster_endpoint_public_access = true
+  endpoint_public_access = true
 
-  cluster_addons = {
+  addons = {
     coredns = {
       most_recent       = true
       resolve_conflicts = "OVERWRITE"
@@ -53,6 +69,7 @@ module "ollama-eks" {
       resolve_conflicts = "OVERWRITE"
     }
     vpc-cni = {
+      before_compute    = true
       most_recent       = true
       resolve_conflicts = "OVERWRITE"
     }
@@ -64,11 +81,11 @@ module "ollama-eks" {
   }
 
   # Networking
-  vpc_id                      = module.vpc.vpc_id
-  subnet_ids                  = module.vpc.private_subnets
-  control_plane_subnet_ids    = module.vpc.private_subnets
-  cluster_security_group_name = "ollama-eks-cluster"
-  node_security_group_name    = "ollama-eks-nodes"
+  vpc_id                   = module.vpc.vpc_id
+  subnet_ids               = module.vpc.private_subnets
+  control_plane_subnet_ids = module.vpc.private_subnets
+  security_group_name      = "open-webui-eks-cluster"
+  node_security_group_name = "open-webui-eks-nodes"
 
   node_security_group_additional_rules = {
     alb_ingress = {
@@ -90,9 +107,13 @@ module "ollama-eks" {
       desired_size = 1
 
       # AMI and instance type
-      ami_id         = data.aws_ami.eks_al2_ami.id
+      ami_id         = data.aws_ami.eks_al2023_ami.id
+      ami_type       = "AL2023_x86_64_STANDARD"
       instance_types = ["m5a.large"]
       capacity_type  = "ON_DEMAND"
+
+      # REQUIRED: Enable bootstrap user data for custom AMI with AL2023
+      enable_bootstrap_user_data = true
 
       # Adds a disk large enough to store user data and files uploaded for RAG 
       disk_size = 100
@@ -116,12 +137,6 @@ module "ollama-eks" {
         AWSExternalDNS               = aws_iam_policy.external_dns.arn
       }
 
-      # User data bootstraps EKS node and installs AWS CLI 
-      pre_bootstrap_user_data = <<-EOT
-      #!/bin/bash
-      /etc/eks/bootstrap.sh ${local.cluster_name}
-      EOT
-
       # Adds Kubernetes labels used for pod placement 
       node_group_labels = {
         "app" = "open-webui"
@@ -132,7 +147,7 @@ module "ollama-eks" {
       }
     }
 
-    ollama-small-fim = {
+    ollama-small = {
       # Number of instances to deploy
       min_size     = 1
       max_size     = 1
@@ -140,12 +155,16 @@ module "ollama-eks" {
 
       # AMI and instance type
       ami_id         = data.aws_ami.eks_gpu_ami.id
+      ami_type       = "AL2023_x86_64_STANDARD"
       instance_types = ["g5.xlarge"]
       capacity_type  = "ON_DEMAND"
 
+      # REQUIRED: Enable bootstrap user data for custom AMI with AL2023
+      enable_bootstrap_user_data = true
+
       # Adds IAM permissions to node role
       create_iam_role = true
-      iam_role_name   = "ollama-fim-eks-node-group"
+      iam_role_name   = "ollama-small-eks-node-group"
       iam_role_additional_policies = {
         AmazonALBIngressController   = aws_iam_policy.aws_load_balancer_controller.arn
         AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
@@ -164,63 +183,6 @@ module "ollama-eks" {
           }
         }
       }
-
-      # User data bootstraps EKS node
-      pre_bootstrap_user_data = <<-EOT
-      #!/bin/bash
-      /etc/eks/bootstrap-gpu-nvidia.sh
-      /etc/eks/bootstrap.sh ${local.cluster_name}
-      EOT
-
-      tags = {
-        "kubernetes.io/cluster/${local.cluster_name}" = "owned"
-      }
-
-      # Adds Kubernetes labels used for pod placement
-      node_group_labels = {
-        "app" = "ollama"
-      }
-    }
-
-    ollama-small-chat = {
-      # Number of instances to deploy
-      min_size     = 1
-      max_size     = 1
-      desired_size = 1
-
-      # AMI and instance type
-      ami_id         = data.aws_ami.eks_gpu_ami.id
-      instance_types = ["g5.xlarge"]
-      capacity_type  = "ON_DEMAND"
-
-      # Adds IAM permissions to node role
-      create_iam_role = true
-      iam_role_name   = "ollama-chat-eks-node-group"
-      iam_role_additional_policies = {
-        AmazonALBIngressController   = aws_iam_policy.aws_load_balancer_controller.arn
-        AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-        AWSExternalDNS               = aws_iam_policy.external_dns.arn
-      }
-
-      # Adds a disk large enough to store models
-      disk_size = 30
-      block_device_mappings = {
-        xvda = {
-          device_name = "/dev/xvda"
-          ebs = {
-            volume_size           = 30
-            volume_type           = "gp2"
-            delete_on_termination = true
-          }
-        }
-      }
-
-      # User data bootstraps EKS node 
-      pre_bootstrap_user_data = <<-EOT
-      #!/bin/bash
-      /etc/eks/bootstrap-gpu-nvidia.sh
-      /etc/eks/bootstrap.sh ${local.cluster_name}
-      EOT
 
       tags = {
         "kubernetes.io/cluster/${local.cluster_name}" = "owned"

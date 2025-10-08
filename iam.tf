@@ -3,7 +3,7 @@ data "aws_caller_identity" "current" {}
 # EBS CSI Driver IAM Policy
 data "aws_iam_policy_document" "ebs_csi_driver_policy" {
   statement {
-    actions   = ["ec2:AttachVolume", "ec2:DetachVolume"]
+    actions   = ["ec2:AttachVolume", "ec2:DetachVolume", "ec2:DescribeAvailabilityZones"]
     resources = ["*"]
   }
 
@@ -28,12 +28,12 @@ data "aws_iam_policy_document" "ebs_csi_driver_role" {
 
     condition {
       test     = "StringEquals"
-      variable = "${replace(module.ollama-eks.cluster_oidc_issuer_url, "https://", "")}:sub"
+      variable = "${replace(module.open-webui-eks.cluster_oidc_issuer_url, "https://", "")}:sub"
       values   = ["system:serviceaccount:kube-system:ebs-csi-controller-sa"]
     }
 
     principals {
-      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/${replace(module.ollama-eks.cluster_oidc_issuer_url, "https://", "")}"]
+      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/${replace(module.open-webui-eks.cluster_oidc_issuer_url, "https://", "")}"]
       type        = "Federated"
     }
   }
@@ -56,12 +56,12 @@ resource "aws_iam_role" "aws_load_balancer_controller" {
     {
       "Effect": "Allow",
       "Principal": {
-        "Federated": "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/${replace(module.ollama-eks.cluster_oidc_issuer_url, "https://", "")}"
+        "Federated": "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/${replace(module.open-webui-eks.cluster_oidc_issuer_url, "https://", "")}"
       },
       "Action": "sts:AssumeRoleWithWebIdentity",
       "Condition": {
         "StringEquals": {
-          "${replace(module.ollama-eks.cluster_oidc_issuer_url, "https://", "")}:sub": "system:serviceaccount:kube-system:aws-load-balancer-controller"
+          "${replace(module.open-webui-eks.cluster_oidc_issuer_url, "https://", "")}:sub": "system:serviceaccount:kube-system:aws-load-balancer-controller"
         }
       }
     }
